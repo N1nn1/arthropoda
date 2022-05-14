@@ -1,6 +1,8 @@
 package com.ninni.arthropoda;
 
 import com.google.common.reflect.Reflection;
+import com.ninni.arthropoda.block.ArthropodaBlocks;
+import com.ninni.arthropoda.item.ArthropodaItems;
 import net.fabricmc.api.ModInitializer;
 
 public class Arthropoda implements ModInitializer {
@@ -9,6 +11,9 @@ public class Arthropoda implements ModInitializer {
 	@SuppressWarnings("UnstableApiUsage")
 	@Override
 	public void onInitialize() {
-		Reflection.initialize();
+		Reflection.initialize(
+			ArthropodaItems.class,
+			ArthropodaBlocks.class
+		);
 	}
 }
