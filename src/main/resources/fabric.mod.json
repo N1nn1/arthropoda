@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "arthropoda",
+  "version": "${version}",
+
+  "name": "Arthropoda",
+  "description": "Simple mod that makes Minecraft more lively by adding more bugs!",
+  "authors": ["Ninni"],
+  "contact": { "sources": "https://github.com/N1nn1/arthropoda" },
+
+  "license": "CC0-1.0",
+  "icon": "assets/arthropoda/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.ninni.arthropoda.Arthropoda"],
+    "client": []
+  },
+  "mixins": ["arthropoda.mixins.json"],
+
+  "depends": {
+    "fabricloader": ">=0.13.3",
+    "fabric": "*",
+    "minecraft": "1.18.x",
+    "java": ">=17"
+  },
+  "suggests": { "another-mod": "*" }
+}
