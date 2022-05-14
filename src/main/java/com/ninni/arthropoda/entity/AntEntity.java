@@ -2,6 +2,7 @@ package com.ninni.arthropoda.entity;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
@@ -95,6 +96,11 @@ public class AntEntity extends TameableEntity implements Angerable {
     protected static float getRandomHealth() { return 2.0F; }
     protected static double getRandomMovementSpeed() { return 0.2; }
     protected static double getRandomAttackDamage() { return 1; }
+
+    @Override
+    public EntityGroup getGroup() {
+        return EntityGroup.ARTHROPOD;
+    }
 
     @Override
     protected void initDataTracker() {
