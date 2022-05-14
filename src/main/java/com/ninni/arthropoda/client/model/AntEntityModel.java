@@ -10,6 +10,7 @@ import net.minecraft.client.model.ModelPartData;
 import net.minecraft.client.model.ModelTransform;
 import net.minecraft.client.model.TexturedModelData;
 import net.minecraft.client.render.entity.model.AnimalModel;
+import net.minecraft.util.math.MathHelper;
 
 @SuppressWarnings("FieldCanBeLocal, unused")
 public class AntEntityModel extends AnimalModel<AntEntity> {
@@ -156,7 +157,57 @@ public class AntEntityModel extends AnimalModel<AntEntity> {
     }
 
     @Override
-    public void setAngles(AntEntity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {}
+    public void setAngles(AntEntity entity, float limbAngle, float limbDistance, float animationProgress, float headYaw, float headPitch) {
+        limbDistance = MathHelper.clamp(limbDistance, -0.45F, 0.45F);
+
+        float speed = 1.0F;
+        float degree = 1.0F;
+
+        head.pitch = headPitch * ((float) Math.PI / 180f);
+        head.yaw = headYaw * ((float) Math.PI / 180f);
+
+        leftAntenna.roll = MathHelper.sin(animationProgress * speed * 0.1F) * degree * 0.8F * 0.25F;
+        leftAntenna.pitch = MathHelper.cos(animationProgress * speed * 0.05F) * degree * 1.5F * 0.25F;
+        rightAntenna.roll = MathHelper.sin(animationProgress * speed * 0.1F + (float)Math.PI) * degree * 0.8F * 0.25F;
+        rightAntenna.pitch = MathHelper.cos(animationProgress * speed * 0.05F + (float)Math.PI) * degree * 1.5F * 0.25F;
+
+        abdomen.roll = MathHelper.sin(limbAngle * speed * 0.6F) * degree * 0.4F * limbDistance;
+
+        leftForeLeg.roll = MathHelper.cos(limbAngle * speed * 0.6F) * degree * 1F * limbDistance + 0.7854F;
+        leftForeLeg.yaw = MathHelper.sin(limbAngle * speed * 0.6F) * degree * -1F * limbDistance + 0.3927F;
+        rightForeLeg.roll = MathHelper.cos(limbAngle * speed * 0.6F + (float)Math.PI/2) * degree * 1F * limbDistance - 0.7854F;
+        rightForeLeg.yaw = MathHelper.sin(limbAngle * speed * 0.6F + (float)Math.PI/2) * degree * -1F * limbDistance - 0.3927F;
+
+        leftMidLeg.roll = MathHelper.sin(limbAngle * speed * 0.6F) * degree * 1F * limbDistance + 0.7854F;
+        leftMidLeg.yaw = MathHelper.cos(limbAngle * speed * 0.6F) * degree * 1F * limbDistance;
+        rightMidLeg.roll = MathHelper.sin(limbAngle * speed * 0.6F + (float)Math.PI/2) * degree * 1F * limbDistance - 0.7854F;
+        rightMidLeg.yaw = MathHelper.cos(limbAngle * speed * 0.6F + (float)Math.PI/2) * degree * 1F * limbDistance;
+
+        leftBackLeg.roll = MathHelper.cos(limbAngle * speed * 0.6F + (float)Math.PI) * degree * 1F * limbDistance + 0.7854F;
+        leftBackLeg.yaw = MathHelper.sin(limbAngle * speed * 0.6F + (float)Math.PI) * degree * -1F * limbDistance - 0.3927F;
+        rightBackLeg.roll = MathHelper.cos(limbAngle * speed * 0.6F + (float)Math.PI/1.5F) * degree * 1F * limbDistance - 0.7854F;
+        rightBackLeg.yaw = MathHelper.sin(limbAngle * speed * 0.6F + (float)Math.PI/1.5F) * degree * -1F * limbDistance + 0.3927F;
+
+        if (entity.isInSittingPose()) {
+            body.pivotY = 22.5F;
+
+            leftForeLeg.roll =0;
+            leftMidLeg.roll = 0;
+            leftBackLeg.roll =0;
+            rightForeLeg.roll =0;
+            rightMidLeg.roll = 0;
+            rightBackLeg.roll =0;
+
+        } else {
+            body.pivotY = 20.5F;
+            leftForeLeg.roll = 0.7854F;
+            leftMidLeg.roll = 0.7854F;
+            leftBackLeg.roll = 0.7854F;
+            rightForeLeg.roll = -0.7854F;
+            rightMidLeg.roll = -0.7854F;
+            rightBackLeg.roll = -0.7854F;
+        }
+    }
 
     @Override
     protected Iterable<ModelPart> getHeadParts() { return ImmutableList.of(); }
