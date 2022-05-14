@@ -32,6 +32,7 @@ import net.minecraft.entity.passive.PassiveEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.passive.TurtleEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.DyeItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -40,6 +41,7 @@ import net.minecraft.recipe.Ingredient;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.DyeColor;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TimeHelper;
 import net.minecraft.util.math.BlockPos;
@@ -56,6 +58,7 @@ public class AntEntity extends TameableEntity implements Angerable {
     private static final TrackedData<Integer> ANGER_TIME = DataTracker.registerData(AntEntity.class, TrackedDataHandlerRegistry.INTEGER);
     private UUID angryAt;
     private static final UniformIntProvider ANGER_TIME_RANGE = TimeHelper.betweenSeconds(20, 39);
+    private static final TrackedData<Integer> ABDOMEN_COLOR = DataTracker.registerData(AntEntity.class, TrackedDataHandlerRegistry.INTEGER);
 
     protected AntEntity(EntityType<? extends TameableEntity> entityType, World world) {
         super(entityType, world);
@@ -68,7 +71,7 @@ public class AntEntity extends TameableEntity implements Angerable {
         this.goalSelector.add(1, new EscapeDangerGoal(this, 1.25));
         this.goalSelector.add(2, new SitGoal(this));
         this.goalSelector.add(3, new MeleeAttackGoal(this, 1.25F, true));
-        this.goalSelector.add(2, new PounceAtTargetGoal(this, 0.2F));
+        this.goalSelector.add(2, new PounceAtTargetGoal(this, 0.4F));
         this.goalSelector.add(4, new FollowOwnerGoal(this, 1.0, 10.0F, 2.0F, true));
         this.goalSelector.add(4, new TemptGoal(this, 1.25, Ingredient.ofItems(Items.SUGAR), false));
         this.goalSelector.add(5, new WanderAroundFarGoal(this, 0.8));
@@ -97,18 +100,21 @@ public class AntEntity extends TameableEntity implements Angerable {
     protected void initDataTracker() {
         super.initDataTracker();
         this.dataTracker.startTracking(ANGER_TIME, 0);
+        this.dataTracker.startTracking(ABDOMEN_COLOR, DyeColor.RED.getId());
     }
 
     @Override
     public void writeCustomDataToNbt(NbtCompound nbt) {
         super.writeCustomDataToNbt(nbt);
         this.writeAngerToNbt(nbt);
+        nbt.putByte("AbdomenColor", (byte) this.getAbdomenColor().getId());
     }
 
     @Override
     public void readCustomDataFromNbt(NbtCompound nbt) {
         super.readCustomDataFromNbt(nbt);
         this.readAngerFromNbt(this.world, nbt);
+        this.setAbdomenColor(DyeColor.byId(nbt.getInt("AbdomenColor")));
     }
 
 
@@ -122,7 +128,7 @@ public class AntEntity extends TameableEntity implements Angerable {
             return bl ? ActionResult.CONSUME : ActionResult.PASS;
         } else {
             if (this.isTamed()) {
-                if (this.isHealingItem(itemStack) && this.getHealth() < this.getMaxHealth()) {
+                if (this.isHealingItem(itemStack) && this.getHealth() < this.getMaxHealth() ) {
                     if (!this.isSilent()) {
                         this.world.playSoundFromEntity(null, this, SoundEvents.ENTITY_GENERIC_EAT, this.getSoundCategory(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
                     }
@@ -134,11 +140,26 @@ public class AntEntity extends TameableEntity implements Angerable {
                     return ActionResult.SUCCESS;
                 }
                 ActionResult actionResult = super.interactMob(player, hand);
-                if ((!actionResult.isAccepted() || this.isBaby()) && this.isOwner(player)) {
-                    this.setSitting(!this.isSitting());
-                    this.jumping = false;
-                    this.navigation.stop();
-                    this.setTarget(null);
+
+                if (!(item instanceof DyeItem)) {
+                    if ((!actionResult.isAccepted() || this.isBaby()) && this.isOwner(player)) {
+                        this.setSitting(!this.isSitting());
+                        this.jumping = false;
+                        this.navigation.stop();
+                        this.setTarget(null);
+                        return ActionResult.SUCCESS;
+                    }
+
+                    return actionResult;
+                }
+
+                DyeColor dyeColor = ((DyeItem)item).getColor();
+                if (dyeColor != this.getAbdomenColor()) {
+                    this.setAbdomenColor(dyeColor);
+                    if (!player.getAbilities().creativeMode) {
+                        itemStack.decrement(1);
+                    }
+
                     return ActionResult.SUCCESS;
                 }
 
@@ -168,6 +189,14 @@ public class AntEntity extends TameableEntity implements Angerable {
 
             return super.interactMob(player, hand);
         }
+    }
+
+    public DyeColor getAbdomenColor() {
+        return DyeColor.byId(this.dataTracker.get(ABDOMEN_COLOR));
+    }
+
+    public void setAbdomenColor(DyeColor color){
+        this.dataTracker.set(ABDOMEN_COLOR, color.getId());
     }
 
     public boolean isHealingItem (ItemStack stack){
