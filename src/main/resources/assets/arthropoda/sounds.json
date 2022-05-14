@@ -1,0 +1,61 @@
+{
+  "entity.ant.idle": {
+    "sounds": [
+      "arthropoda:entity/ant/idle1",
+      "arthropoda:entity/ant/idle2",
+      "arthropoda:entity/ant/idle3",
+      "arthropoda:entity/ant/idle4",
+      "arthropoda:entity/ant/idle5",
+      "arthropoda:entity/ant/idle6",
+      "arthropoda:entity/ant/idle7",
+      "arthropoda:entity/ant/idle8"
+    ],
+    "subtitle": "subtitles.entity.arthropoda.ant.idle"
+  },
+  "entity.ant.hurt": {
+    "sounds": [
+      "arthropoda:entity/ant/hurt1",
+      "arthropoda:entity/ant/hurt2",
+      "arthropoda:entity/ant/hurt3",
+      "arthropoda:entity/ant/hurt4",
+      "arthropoda:entity/ant/hurt5",
+      "arthropoda:entity/ant/hurt6",
+      "arthropoda:entity/ant/hurt7"
+    ],
+    "subtitle": "subtitles.entity.arthropoda.ant.hurt"
+  },
+  "entity.ant.eat": {
+    "sounds": [
+      "arthropoda:entity/ant/eat1",
+      "arthropoda:entity/ant/eat2",
+      "arthropoda:entity/ant/eat3"
+    ],
+    "subtitle": "subtitles.entity.arthropoda.ant.eat"
+  },
+  "entity.ant.death": {
+    "sounds": [
+      "arthropoda:entity/ant/death1",
+      "arthropoda:entity/ant/death2"
+    ],
+    "subtitle": "subtitles.entity.arthropoda.ant.death"
+  },
+  "entity.ant.attack": {
+    "sounds": [
+      "arthropoda:entity/ant/attack1",
+      "arthropoda:entity/ant/attack2",
+      "arthropoda:entity/ant/attack3"
+    ],
+    "subtitle": "subtitles.entity.arthropoda.ant.attack"
+  },
+  "entity.ant.walk": {
+    "sounds": [
+      "arthropoda:entity/ant/walk1",
+      "arthropoda:entity/ant/walk2",
+      "arthropoda:entity/ant/walk3",
+      "arthropoda:entity/ant/walk4",
+      "arthropoda:entity/ant/walk5",
+      "arthropoda:entity/ant/walk6"
+    ],
+    "subtitle": "subtitles.entity.arthropoda.ant.walk"
+  }
+}

@@ -1,9 +1,11 @@
 package com.ninni.arthropoda.entity;
 
+import com.ninni.arthropoda.sound.ArthropodaSoundEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
 import net.minecraft.entity.ai.goal.AttackWithOwnerGoal;
@@ -40,7 +42,10 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.tag.BlockTags;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Hand;
@@ -71,7 +76,7 @@ public class AntEntity extends TameableEntity implements Angerable {
         this.goalSelector.add(0, new SwimGoal(this));
         this.goalSelector.add(1, new EscapeDangerGoal(this, 1.25));
         this.goalSelector.add(2, new SitGoal(this));
-        this.goalSelector.add(3, new MeleeAttackGoal(this, 1.25F, true));
+        this.goalSelector.add(3, new AttackGoal(1.25F, true));
         this.goalSelector.add(2, new PounceAtTargetGoal(this, 0.4F));
         this.goalSelector.add(4, new FollowOwnerGoal(this, 1.0, 10.0F, 2.0F, true));
         this.goalSelector.add(4, new TemptGoal(this, 1.25, Ingredient.ofItems(Items.SUGAR), false));
@@ -82,11 +87,11 @@ public class AntEntity extends TameableEntity implements Angerable {
         this.targetSelector.add(1, new TrackOwnerAttackerGoal(this));
         this.targetSelector.add(2, new AttackWithOwnerGoal(this));
         this.targetSelector.add(3, (new RevengeGoal(this)).setGroupRevenge());
-        this.targetSelector.add(4, new ActiveTargetGoal<>(this, PlayerEntity.class, 10, true, false, this::shouldAngerAt));
+        this.targetSelector.add(4, new OtherAntsTargetGoal(1.25F, false));
+        this.targetSelector.add(5, new ActiveTargetGoal<>(this, PlayerEntity.class, 10, true, false, this::shouldAngerAt));
         this.targetSelector.add(6, new UntamedActiveTargetGoal<>(this, TurtleEntity.class, false, TurtleEntity.BABY_TURTLE_ON_LAND_FILTER));
         this.targetSelector.add(8, new UniversalAngerGoal<>(this, true));
     }
-
     public static DefaultAttributeContainer.Builder createAntAttributes() {
         return createMobAttributes()
             .add(EntityAttributes.GENERIC_MAX_HEALTH, getRandomHealth())
@@ -174,7 +179,7 @@ public class AntEntity extends TameableEntity implements Angerable {
 
             } else if (item == Items.SUGAR) {
                 if (!this.isSilent()) {
-                    this.world.playSoundFromEntity(null, this, SoundEvents.ENTITY_GENERIC_EAT, this.getSoundCategory(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
+                    this.world.playSoundFromEntity(null, this, ArthropodaSoundEvents.ENTITY_ANT_EAT, this.getSoundCategory(), 1.0F, 1.5F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
                 }
                 if (!player.getAbilities().creativeMode) {
                     itemStack.decrement(1);
@@ -235,6 +240,60 @@ public class AntEntity extends TameableEntity implements Angerable {
     @Override
     public void setAngryAt(@Nullable UUID angryAt) {
         this.angryAt = angryAt;
+    }
+
+    @Nullable
+    @Override
+    protected SoundEvent getAmbientSound() { return ArthropodaSoundEvents.ENTITY_ANT_AMBIENT; }
+    @Nullable
+    @Override
+    protected SoundEvent getHurtSound(DamageSource source) { return ArthropodaSoundEvents.ENTITY_ANT_HURT; }
+    @Nullable
+    @Override
+    protected SoundEvent getDeathSound() { return ArthropodaSoundEvents.ENTITY_ANT_DEATH; }
+
+    @Override
+    protected void playStepSound(BlockPos pos, BlockState state) {
+        if (!state.getMaterial().isLiquid()) {
+            BlockState blockState = this.world.getBlockState(pos.up());
+            BlockSoundGroup blockSoundGroup = blockState.isIn(BlockTags.INSIDE_STEP_SOUND_BLOCKS) ? blockState.getSoundGroup() : state.getSoundGroup();
+            this.playSound(ArthropodaSoundEvents.ENTITY_ANT_WALK, blockSoundGroup.getVolume() * 0.15F, blockSoundGroup.getPitch());
+        }
+    }
+
+    @Override
+    protected float getSoundVolume() { return 2.0F; }
+    @Override
+    public float getSoundPitch() { return super.getSoundPitch() + 0.5F; }
+
+    private class AttackGoal extends MeleeAttackGoal {
+
+        public AttackGoal(double speed, boolean pauseWhenIdle) { super(AntEntity.this, speed, pauseWhenIdle); }
+
+        @Override
+        protected void attack(LivingEntity target, double squaredDistance) {
+            double d = this.getSquaredMaxAttackDistance(target);
+            if (squaredDistance <= d && this.isCooledDown()) {
+                this.resetCooldown();
+                this.mob.tryAttack(target);
+                AntEntity.this.playSound(ArthropodaSoundEvents.ENTITY_ANT_ATTACK, 1.0F, 1.0F);
+            }
+        }
+
+        @Override
+        public boolean canStart() {
+            return !AntEntity.this.isSitting() && !AntEntity.this.isSleeping() && !AntEntity.this.isInSneakingPose() && !AntEntity.this.isNavigating() && super.canStart();
+        }
+    }
+
+    private class OtherAntsTargetGoal extends ActiveTargetGoal<AntEntity> {
+
+        public OtherAntsTargetGoal(double speed, boolean pauseWhenIdle) { super(AntEntity.this, AntEntity.class, false); }
+
+        @Override
+        public void start() {
+            if (this.mob instanceof AntEntity ant && this.targetEntity instanceof AntEntity antTarget && antTarget.getAbdomenColor() != ant.getAbdomenColor()) super.start();
+        }
     }
 
     @Nullable

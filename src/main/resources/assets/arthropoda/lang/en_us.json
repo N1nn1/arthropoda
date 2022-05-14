@@ -3,5 +3,12 @@
 
   "item.arthropoda.ant_spawn_egg": "Ant Spawn Egg",
 
-  "entity.arthropoda.ant": "Ant"
+  "entity.arthropoda.ant": "Ant",
+
+  "subtitles.entity.arthropoda.ant.idle": "Ant clicks productively",
+  "subtitles.entity.arthropoda.ant.hurt": "Ant hurts",
+  "subtitles.entity.arthropoda.ant.death": "Ant dies",
+  "subtitles.entity.arthropoda.ant.eat": "Ant chews",
+  "subtitles.entity.arthropoda.ant.attack": "Ant clicks aggressively",
+  "subtitles.entity.arthropoda.ant.walk": "Ant strides"
 }
