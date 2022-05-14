@@ -1,3 +1,7 @@
 {
-  "block.arthropoda.anthill": "Anthill"
+  "block.arthropoda.anthill": "Anthill",
+
+  "item.arthropoda.ant_spawn_egg": "Ant Spawn Egg",
+
+  "entity.arthropoda.ant": "Ant"
 }
