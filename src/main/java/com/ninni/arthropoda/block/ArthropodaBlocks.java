@@ -11,7 +11,7 @@ import static com.ninni.arthropoda.Arthropoda.*;
 
 public class ArthropodaBlocks {
 
-    public static final Block ANTHILL = register("anthill", new Block(AbstractBlock.Settings.of(Material.SOLID_ORGANIC).strength(0.6F).sounds(BlockSoundGroup.ROOTED_DIRT)));
+    public static final Block ANTHILL = register("anthill", new AnthillBlock(AbstractBlock.Settings.of(Material.SOLID_ORGANIC).strength(0.6F).sounds(BlockSoundGroup.ROOTED_DIRT)));
 
     private static Block register(String id, Block block) {
         return Registry.register(Registry.BLOCK, new Identifier(MOD_ID, id), block);

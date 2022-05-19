@@ -161,17 +161,18 @@ public class AntEntityModel extends AnimalModel<AntEntity> {
         limbDistance = MathHelper.clamp(limbDistance, -0.45F, 0.45F);
 
         float speed = 1.0F;
-        float degree = 1.0F;
+        float degree = 2.0F;
 
         head.pitch = headPitch * ((float) Math.PI / 180f);
         head.yaw = headYaw * ((float) Math.PI / 180f);
 
-        leftAntenna.roll = MathHelper.sin(animationProgress * speed * 0.1F) * degree * 0.8F * 0.25F;
-        leftAntenna.pitch = MathHelper.cos(animationProgress * speed * 0.05F) * degree * 1.5F * 0.25F;
-        rightAntenna.roll = MathHelper.sin(animationProgress * speed * 0.1F + (float)Math.PI) * degree * 0.8F * 0.25F;
-        rightAntenna.pitch = MathHelper.cos(animationProgress * speed * 0.05F + (float)Math.PI) * degree * 1.5F * 0.25F;
+        leftAntenna.roll = MathHelper.sin(animationProgress * speed * 0.1F) * degree * 0.4F * 0.25F;
+        leftAntenna.pitch = MathHelper.cos(animationProgress * speed * 0.05F) * degree * 0.75F * 0.25F;
 
-        abdomen.roll = MathHelper.sin(limbAngle * speed * 0.6F) * degree * 0.4F * limbDistance;
+        rightAntenna.roll = MathHelper.sin(animationProgress * speed * 0.1F + (float)Math.PI) * degree * 0.4F * 0.25F;
+        rightAntenna.pitch = MathHelper.cos(animationProgress * speed * 0.05F + (float)Math.PI) * degree * 0.75F * 0.25F;
+
+        abdomen.roll = MathHelper.sin(limbAngle * speed * 0.6F) * degree * 0.2F * limbDistance;
 
         leftForeLeg.roll = MathHelper.cos(limbAngle * speed * 0.6F) * degree * 1F * limbDistance + 0.7854F;
         leftForeLeg.yaw = MathHelper.sin(limbAngle * speed * 0.6F) * degree * -1F * limbDistance + 0.3927F;

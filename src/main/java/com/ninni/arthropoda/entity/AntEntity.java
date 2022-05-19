@@ -94,18 +94,13 @@ public class AntEntity extends TameableEntity implements Angerable {
     }
     public static DefaultAttributeContainer.Builder createAntAttributes() {
         return createMobAttributes()
-            .add(EntityAttributes.GENERIC_MAX_HEALTH, getRandomHealth())
-            .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, getRandomMovementSpeed())
-            .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, getRandomAttackDamage());
+            .add(EntityAttributes.GENERIC_MAX_HEALTH, 3)
+            .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.2)
+            .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 1);
     }
-    protected static float getRandomHealth() { return 2.0F; }
-    protected static double getRandomMovementSpeed() { return 0.2; }
-    protected static double getRandomAttackDamage() { return 1; }
 
     @Override
-    public EntityGroup getGroup() {
-        return EntityGroup.ARTHROPOD;
-    }
+    public EntityGroup getGroup() { return EntityGroup.ARTHROPOD; }
 
     @Override
     protected void initDataTracker() {
@@ -140,12 +135,8 @@ public class AntEntity extends TameableEntity implements Angerable {
         } else {
             if (this.isTamed()) {
                 if (this.isHealingItem(itemStack) && this.getHealth() < this.getMaxHealth() ) {
-                    if (!this.isSilent()) {
-                        this.world.playSoundFromEntity(null, this, SoundEvents.ENTITY_GENERIC_EAT, this.getSoundCategory(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
-                    }
-                    if (!player.getAbilities().creativeMode) {
-                        itemStack.decrement(1);
-                    }
+                    if (!this.isSilent()) { this.world.playSoundFromEntity(null, this, SoundEvents.ENTITY_GENERIC_EAT, this.getSoundCategory(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);}
+                    if (!player.getAbilities().creativeMode) { itemStack.decrement(1); }
 
                     this.heal((float)item.getFoodComponent().getHunger());
                     return ActionResult.SUCCESS;
@@ -167,9 +158,7 @@ public class AntEntity extends TameableEntity implements Angerable {
                 DyeColor dyeColor = ((DyeItem)item).getColor();
                 if (dyeColor != this.getAbdomenColor()) {
                     this.setAbdomenColor(dyeColor);
-                    if (!player.getAbilities().creativeMode) {
-                        itemStack.decrement(1);
-                    }
+                    if (!player.getAbilities().creativeMode) { itemStack.decrement(1); }
 
                     return ActionResult.SUCCESS;
                 }
@@ -178,22 +167,15 @@ public class AntEntity extends TameableEntity implements Angerable {
 
 
             } else if (item == Items.SUGAR) {
-                if (!this.isSilent()) {
-                    this.world.playSoundFromEntity(null, this, ArthropodaSoundEvents.ENTITY_ANT_EAT, this.getSoundCategory(), 1.0F, 1.5F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
-                }
-                if (!player.getAbilities().creativeMode) {
-                    itemStack.decrement(1);
-                }
+                if (!this.isSilent()) { this.world.playSoundFromEntity(null, this, ArthropodaSoundEvents.ENTITY_ANT_EAT, this.getSoundCategory(), 1.0F, 1.5F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F); }
+                if (!player.getAbilities().creativeMode) { itemStack.decrement(1); }
 
                 if (this.random.nextInt(3) == 0) {
                     this.setOwner(player);
                     this.navigation.stop();
                     this.setTarget(null);
-                    this.setSitting(true);
                     this.world.sendEntityStatus(this, (byte)7);
-                } else {
-                    this.world.sendEntityStatus(this, (byte)6);
-                }
+                } else { this.world.sendEntityStatus(this, (byte)6); }
 
                 return ActionResult.SUCCESS;
             }
@@ -202,13 +184,9 @@ public class AntEntity extends TameableEntity implements Angerable {
         }
     }
 
-    public DyeColor getAbdomenColor() {
-        return DyeColor.byId(this.dataTracker.get(ABDOMEN_COLOR));
-    }
+    public DyeColor getAbdomenColor() { return DyeColor.byId(this.dataTracker.get(ABDOMEN_COLOR)); }
 
-    public void setAbdomenColor(DyeColor color){
-        this.dataTracker.set(ABDOMEN_COLOR, color.getId());
-    }
+    public void setAbdomenColor(DyeColor color){ this.dataTracker.set(ABDOMEN_COLOR, color.getId()); }
 
     public boolean isHealingItem (ItemStack stack){
         Item item = stack.getItem();
@@ -221,26 +199,16 @@ public class AntEntity extends TameableEntity implements Angerable {
     public boolean hurtByWater() { return true; }
 
     @Override
-    public int getAngerTime() {
-        return this.dataTracker.get(ANGER_TIME);
-    }
+    public int getAngerTime() { return this.dataTracker.get(ANGER_TIME); }
     @Override
-    public void setAngerTime(int angerTime) {
-        this.dataTracker.set(ANGER_TIME, angerTime);
-    }
+    public void setAngerTime(int angerTime) { this.dataTracker.set(ANGER_TIME, angerTime); }
     @Override
-    public void chooseRandomAngerTime() {
-        this.setAngerTime(ANGER_TIME_RANGE.get(this.random));
-    }
+    public void chooseRandomAngerTime() { this.setAngerTime(ANGER_TIME_RANGE.get(this.random)); }
     @Override
     @Nullable
-    public UUID getAngryAt() {
-        return this.angryAt;
-    }
+    public UUID getAngryAt() { return this.angryAt; }
     @Override
-    public void setAngryAt(@Nullable UUID angryAt) {
-        this.angryAt = angryAt;
-    }
+    public void setAngryAt(@Nullable UUID angryAt) { this.angryAt = angryAt; }
 
     @Nullable
     @Override
@@ -281,19 +249,16 @@ public class AntEntity extends TameableEntity implements Angerable {
         }
 
         @Override
-        public boolean canStart() {
-            return !AntEntity.this.isSitting() && !AntEntity.this.isSleeping() && !AntEntity.this.isInSneakingPose() && !AntEntity.this.isNavigating() && super.canStart();
-        }
+        public boolean canStart() { return !AntEntity.this.isSitting() && !AntEntity.this.isSleeping() && !AntEntity.this.isInSneakingPose() && !AntEntity.this.isNavigating() && super.canStart(); }
     }
 
     private class OtherAntsTargetGoal extends ActiveTargetGoal<AntEntity> {
 
+        @SuppressWarnings("unused")
         public OtherAntsTargetGoal(double speed, boolean pauseWhenIdle) { super(AntEntity.this, AntEntity.class, false); }
 
         @Override
-        public void start() {
-            if (this.mob instanceof AntEntity ant && this.targetEntity instanceof AntEntity antTarget && antTarget.getAbdomenColor() != ant.getAbdomenColor()) super.start();
-        }
+        public void start() { if (this.mob instanceof AntEntity ant && this.targetEntity instanceof AntEntity antTarget && antTarget.getAbdomenColor() != ant.getAbdomenColor() && ant.isTamed() && antTarget.isTamed()) super.start(); }
     }
 
     @Nullable

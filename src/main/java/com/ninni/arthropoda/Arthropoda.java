@@ -1,6 +1,7 @@
 package com.ninni.arthropoda;
 
 import com.google.common.reflect.Reflection;
+import com.ninni.arthropoda.block.ArthropodaBlockEntities;
 import com.ninni.arthropoda.block.ArthropodaBlocks;
 import com.ninni.arthropoda.item.ArthropodaItems;
 import com.ninni.arthropoda.sound.ArthropodaSoundEvents;
@@ -15,6 +16,7 @@ public class Arthropoda implements ModInitializer {
 		Reflection.initialize(
 			ArthropodaItems.class,
 			ArthropodaBlocks.class,
+			ArthropodaBlockEntities.class,
 			ArthropodaSoundEvents.class
 		);
 	}
