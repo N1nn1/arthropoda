@@ -3,6 +3,7 @@ package com.ninni.arthropoda.entity;
 import com.ninni.arthropoda.sound.ArthropodaSoundEvents;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.entity.EntityData;
 import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -51,7 +52,9 @@ import net.minecraft.util.DyeColor;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TimeHelper;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.intprovider.UniformIntProvider;
+import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -72,12 +75,19 @@ public class AntEntity extends TameableEntity implements Angerable {
     }
 
     @Override
+    public EntityData initialize(ServerWorldAccess world, LocalDifficulty difficulty, SpawnReason spawnReason, @Nullable EntityData entityData, @Nullable NbtCompound entityNbt) {
+        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)).setBaseValue(MathHelper.nextInt(random, 1, 4));
+        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE)).setBaseValue(MathHelper.nextInt(random, 1, 2));
+        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).setBaseValue(MathHelper.nextDouble(random, 0.2, 0.275));
+        return super.initialize(world, difficulty, spawnReason, entityData, entityNbt);
+    }
+
+    @Override
     protected void initGoals() {
         this.goalSelector.add(0, new SwimGoal(this));
-        this.goalSelector.add(1, new EscapeDangerGoal(this, 1.25));
-        this.goalSelector.add(2, new SitGoal(this));
-        this.goalSelector.add(3, new AttackGoal(1.25F, true));
-        this.goalSelector.add(2, new PounceAtTargetGoal(this, 0.4F));
+        this.goalSelector.add(1, new SitGoal(this));
+        this.goalSelector.add(2, new AttackGoal(1.25F, true));
+        this.goalSelector.add(3, new PounceAtTargetGoal(this, 0.4F));
         this.goalSelector.add(4, new FollowOwnerGoal(this, 1.0, 10.0F, 2.0F, true));
         this.goalSelector.add(4, new TemptGoal(this, 1.25, Ingredient.ofItems(Items.SUGAR), false));
         this.goalSelector.add(5, new WanderAroundFarGoal(this, 0.8));
@@ -94,9 +104,9 @@ public class AntEntity extends TameableEntity implements Angerable {
     }
     public static DefaultAttributeContainer.Builder createAntAttributes() {
         return createMobAttributes()
-            .add(EntityAttributes.GENERIC_MAX_HEALTH, 3)
-            .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.2)
-            .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 1);
+            .add(EntityAttributes.GENERIC_MAX_HEALTH, 10)
+            .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 1)
+            .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 3);
     }
 
     @Override
