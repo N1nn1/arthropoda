@@ -32,6 +32,7 @@ public class AnthillBlock extends BlockWithEntity {
     @Override
     public void onEntityLand(BlockView world, Entity entity) {
         if (entity.bypassesLandingEffects()) { super.onEntityLand(world, entity); } else if (entity instanceof PlayerEntity player && !player.isCreative()) { this.angerNearbyAnts((World) world, player.getBlockPos()); }
+        //TODO add particles/sounds indicating your error
     }
 
     private void angerNearbyAnts(World world, BlockPos pos) {

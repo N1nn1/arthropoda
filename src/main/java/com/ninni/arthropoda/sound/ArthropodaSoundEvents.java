@@ -19,6 +19,8 @@ public interface ArthropodaSoundEvents {
         return createEntitySound("ant", type);
     }
 
+    //TODO add anthill block sounds
+
     private static SoundEvent register(String id) {
         Identifier identifier = new Identifier(MOD_ID, id);
         return Registry.register(Registry.SOUND_EVENT, identifier, new SoundEvent(identifier));
