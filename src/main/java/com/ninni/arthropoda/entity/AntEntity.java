@@ -1,6 +1,8 @@
 package com.ninni.arthropoda.entity;
 
+import com.ninni.arthropoda.block.ArthropodaBlocks;
 import com.ninni.arthropoda.sound.ArthropodaSoundEvents;
+import com.sun.jna.platform.win32.OaIdl;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityData;
@@ -11,6 +13,7 @@ import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
 import net.minecraft.entity.ai.goal.AttackWithOwnerGoal;
 import net.minecraft.entity.ai.goal.FollowOwnerGoal;
+import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.ai.goal.LookAroundGoal;
 import net.minecraft.entity.ai.goal.LookAtEntityGoal;
 import net.minecraft.entity.ai.goal.MeleeAttackGoal;
@@ -40,6 +43,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtHelper;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.BlockSoundGroup;
@@ -49,14 +53,17 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TimeHelper;
+import net.minecraft.util.annotation.Debug;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.intprovider.UniformIntProvider;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
+import org.apache.commons.compress.utils.Lists;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
@@ -64,6 +71,8 @@ import java.util.UUID;
 public class AntEntity extends TameableEntity implements Angerable {
     private static final TrackedData<Integer> ANGER_TIME = DataTracker.registerData(AntEntity.class, TrackedDataHandlerRegistry.INTEGER);
     private UUID angryAt;
+    @Nullable
+    BlockPos anthillPos;
     private static final UniformIntProvider ANGER_TIME_RANGE = TimeHelper.betweenSeconds(20, 39);
     private static final TrackedData<Integer> ABDOMEN_COLOR = DataTracker.registerData(AntEntity.class, TrackedDataHandlerRegistry.INTEGER);
 
@@ -74,9 +83,9 @@ public class AntEntity extends TameableEntity implements Angerable {
 
     @Override
     public EntityData initialize(ServerWorldAccess world, LocalDifficulty difficulty, SpawnReason spawnReason, @Nullable EntityData entityData, @Nullable NbtCompound entityNbt) {
-        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)).setBaseValue(MathHelper.nextInt(random, 1, 4));
-        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE)).setBaseValue(MathHelper.nextInt(random, 1, 2));
-        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).setBaseValue(MathHelper.nextDouble(random, 0.2, 0.275));
+        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)).setBaseValue(10 + MathHelper.nextInt(random, 1, 4));
+        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE)).setBaseValue(3 + MathHelper.nextInt(random, 1, 2));
+        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).setBaseValue(1 + MathHelper.nextDouble(random, 0.2, 0.275));
         return super.initialize(world, difficulty, spawnReason, entityData, entityNbt);
     }
 
@@ -89,6 +98,7 @@ public class AntEntity extends TameableEntity implements Angerable {
         this.goalSelector.add(4, new FollowOwnerGoal(this, 1.0, 10.0F, 2.0F, true));
         this.goalSelector.add(4, new TemptGoal(this, 1.25, Ingredient.ofItems(Items.SUGAR), false));
         this.goalSelector.add(5, new WanderAroundFarGoal(this, 0.8));
+        this.goalSelector.add(6, new FindAnthillGoal(this));
         this.goalSelector.add(6, new LookAroundGoal(this));
         this.goalSelector.add(7, new LookAtEntityGoal(this, PlayerEntity.class, 6));
 
@@ -110,6 +120,15 @@ public class AntEntity extends TameableEntity implements Angerable {
     @Override
     public EntityGroup getGroup() { return EntityGroup.ARTHROPOD; }
 
+    @Nullable
+    public BlockPos getAnthillPos() {
+        return this.anthillPos;
+    }
+
+    public void setAnthillPos(BlockPos pos) {
+        this.anthillPos = pos;
+    }
+
     @Override
     protected void initDataTracker() {
         super.initDataTracker();
@@ -122,6 +141,9 @@ public class AntEntity extends TameableEntity implements Angerable {
         super.writeCustomDataToNbt(nbt);
         this.writeAngerToNbt(nbt);
         nbt.putByte("AbdomenColor", (byte) this.getAbdomenColor().getId());
+        if (this.getAnthillPos() != null) {
+            nbt.put("AnthillPos", NbtHelper.fromBlockPos(this.getAnthillPos()));
+        }
     }
 
     @Override
@@ -129,6 +151,10 @@ public class AntEntity extends TameableEntity implements Angerable {
         super.readCustomDataFromNbt(nbt);
         this.readAngerFromNbt(this.world, nbt);
         this.setAbdomenColor(DyeColor.byId(nbt.getInt("AbdomenColor")));
+        this.setAnthillPos(null);
+        if (nbt.contains("AnthillPos")) {
+            this.setAnthillPos(NbtHelper.toBlockPos(nbt.getCompound("AnthillPos")));
+        }
     }
 
     @Override
@@ -145,7 +171,6 @@ public class AntEntity extends TameableEntity implements Angerable {
                 if (!(item instanceof DyeItem)) {
                     if ((!actionResult.isAccepted() || this.isBaby()) && this.isOwner(player)) {
                         this.setSitting(!this.isSitting());
-                        this.setSitting(true);
                         this.jumping = false;
                         this.navigation.stop();
                         this.setTarget(null);
@@ -228,6 +253,14 @@ public class AntEntity extends TameableEntity implements Angerable {
     @Override
     public float getSoundPitch() { return super.getSoundPitch() + 0.5F; }
 
+    @Override
+    public void tick() {
+        super.tick();
+        if (!this.world.isClient) {
+            System.out.println(this.getAttributeValue(EntityAttributes.GENERIC_MAX_HEALTH));
+        }
+    }
+
     private class AttackGoal extends MeleeAttackGoal {
 
         public AttackGoal(double speed, boolean pauseWhenIdle) { super(AntEntity.this, speed, pauseWhenIdle); }
@@ -263,5 +296,85 @@ public class AntEntity extends TameableEntity implements Angerable {
     public static boolean canSpawn(EntityType <AntEntity> entity, ServerWorldAccess world, SpawnReason reason, BlockPos pos, Random random){
         BlockState state = world.getBlockState(pos.down());
         return state.isOf(Blocks.GRASS_BLOCK) && world.getBaseLightLevel(pos, 0) > 8;
+    }
+
+    private class GoBackHomeDuringNight extends Goal {
+        private final AntEntity ant;
+
+        public GoBackHomeDuringNight(AntEntity ant) {
+            this.ant = ant;
+        }
+
+        @Override
+        public boolean canStart() {
+            return this.ant.getAnthillPos() != null && this.ant.world.isNight();
+        }
+
+        @Override
+        public boolean shouldContinue() {
+            return this.ant.getAnthillPos() != null;
+        }
+
+        @Override
+        public void tick() {
+            BlockPos anthill = this.ant.getAnthillPos();
+            if (anthill != null) {
+                this.ant.getNavigation().startMovingTo(anthill.getX(), anthill.getY(), anthill.getZ(), 1.0D);
+            }
+        }
+    }
+
+    private class FindAnthillGoal extends Goal {
+        private final AntEntity ant;
+        private int findingTicks;
+        private BlockPos anthillPos;
+
+        public FindAnthillGoal(AntEntity ant) {
+            this.ant = ant;
+        }
+
+        @Override
+        public boolean canStart() {
+            this.anthillPos = this.getNearestAnthills();
+            return this.ant.getAnthillPos() == null && this.anthillPos != null;
+        }
+
+        @Override
+        public boolean shouldContinue() {
+            return this.anthillPos != null;
+        }
+
+        @Override
+        public void start() {
+            this.findingTicks = 1200;
+        }
+
+        @Override
+        public void tick() {
+            if (this.findingTicks > 0) {
+                this.findingTicks--;
+                this.ant.getNavigation().startMovingTo(this.anthillPos.getX(), this.anthillPos.getY(), this.anthillPos.getZ(), 1.0F);
+                if (this.ant.getBlockPos().isWithinDistance(this.anthillPos, 2.0D)) {
+                    this.ant.setAnthillPos(this.anthillPos);
+                }
+            }
+        }
+
+        public BlockPos getNearestAnthills() {
+            List<BlockPos> list = Lists.newArrayList();
+            int radius = 4;
+            for (int x = -radius; x <= radius; x++) {
+                for (int z = -radius; z <= radius; z++) {
+                    BlockPos pos = new BlockPos(this.ant.getBlockPos().getX() + x, this.ant.getBlockPos().getY(), this.ant.getBlockPos().getZ() + z);
+                    if (this.ant.world.getBlockState(pos).isOf(ArthropodaBlocks.ANTHILL)) {
+                        list.add(pos);
+                    }
+                }
+            }
+            if (list.isEmpty()) return null;
+
+            return list.get(0);
+        }
+
     }
 }
