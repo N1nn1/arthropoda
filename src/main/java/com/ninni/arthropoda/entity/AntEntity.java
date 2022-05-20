@@ -2,7 +2,6 @@ package com.ninni.arthropoda.entity;
 
 import com.ninni.arthropoda.block.ArthropodaBlocks;
 import com.ninni.arthropoda.sound.ArthropodaSoundEvents;
-import com.sun.jna.platform.win32.OaIdl;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EntityData;
@@ -53,7 +52,6 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TimeHelper;
-import net.minecraft.util.annotation.Debug;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.intprovider.UniformIntProvider;
@@ -63,8 +61,8 @@ import net.minecraft.world.World;
 import org.apache.commons.compress.utils.Lists;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
 import java.util.UUID;
 
@@ -81,11 +79,12 @@ public class AntEntity extends TameableEntity implements Angerable {
         this.setPathfindingPenalty(PathNodeType.WATER, 1);
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public EntityData initialize(ServerWorldAccess world, LocalDifficulty difficulty, SpawnReason spawnReason, @Nullable EntityData entityData, @Nullable NbtCompound entityNbt) {
-        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)).setBaseValue(10 + MathHelper.nextInt(random, 1, 4));
-        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE)).setBaseValue(3 + MathHelper.nextInt(random, 1, 2));
-        Objects.requireNonNull(this.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED)).setBaseValue(1 + MathHelper.nextDouble(random, 0.2, 0.275));
+        this.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).setBaseValue(MathHelper.nextInt(random, 1, 4));
+        this.getAttributeInstance(EntityAttributes.GENERIC_ATTACK_DAMAGE).setBaseValue(MathHelper.nextInt(random, 1, 2));
+        this.getAttributeInstance(EntityAttributes.GENERIC_MOVEMENT_SPEED).setBaseValue(MathHelper.nextDouble(random, 0.2, 0.275));
         return super.initialize(world, difficulty, spawnReason, entityData, entityNbt);
     }
 
@@ -97,10 +96,10 @@ public class AntEntity extends TameableEntity implements Angerable {
         this.goalSelector.add(3, new PounceAtTargetGoal(this, 0.4F));
         this.goalSelector.add(4, new FollowOwnerGoal(this, 1.0, 10.0F, 2.0F, true));
         this.goalSelector.add(4, new TemptGoal(this, 1.25, Ingredient.ofItems(Items.SUGAR), false));
-        this.goalSelector.add(5, new WanderAroundFarGoal(this, 0.8));
-        this.goalSelector.add(6, new FindAnthillGoal(this));
-        this.goalSelector.add(6, new LookAroundGoal(this));
-        this.goalSelector.add(7, new LookAtEntityGoal(this, PlayerEntity.class, 6));
+        this.goalSelector.add(5, new FindAnthillGoal(this));
+        this.goalSelector.add(6, new WanderAroundFarGoal(this, 0.8));
+        this.goalSelector.add(7, new LookAroundGoal(this));
+        this.goalSelector.add(8, new LookAtEntityGoal(this, PlayerEntity.class, 6));
 
         this.targetSelector.add(1, new TrackOwnerAttackerGoal(this));
         this.targetSelector.add(2, new AttackWithOwnerGoal(this));
@@ -121,13 +120,8 @@ public class AntEntity extends TameableEntity implements Angerable {
     public EntityGroup getGroup() { return EntityGroup.ARTHROPOD; }
 
     @Nullable
-    public BlockPos getAnthillPos() {
-        return this.anthillPos;
-    }
-
-    public void setAnthillPos(BlockPos pos) {
-        this.anthillPos = pos;
-    }
+    public BlockPos getAnthillPos() { return this.anthillPos; }
+    public void setAnthillPos(BlockPos pos) { this.anthillPos = pos; }
 
     @Override
     protected void initDataTracker() {
@@ -191,15 +185,15 @@ public class AntEntity extends TameableEntity implements Angerable {
                 return actionResult;
 
             } else if (item == Items.SUGAR) {
-                if (!this.isSilent()) { this.world.playSoundFromEntity(null, this, ArthropodaSoundEvents.ENTITY_ANT_EAT, this.getSoundCategory(), 1.0F, 1.5F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F); }
-                if (!player.getAbilities().creativeMode) { itemStack.decrement(1); }
+                if (!this.isSilent()) this.world.playSoundFromEntity(null, this, ArthropodaSoundEvents.ENTITY_ANT_EAT, this.getSoundCategory(), 1.0F, 1.5F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
+                if (!player.getAbilities().creativeMode) itemStack.decrement(1);
 
                 if (this.random.nextInt(3) == 0) {
                     this.setOwner(player);
                     this.navigation.stop();
                     this.setTarget(null);
                     this.world.sendEntityStatus(this, (byte)7);
-                } else { this.world.sendEntityStatus(this, (byte)6); }
+                } else this.world.sendEntityStatus(this, (byte)6);
 
                 return ActionResult.SUCCESS;
             }
@@ -209,7 +203,6 @@ public class AntEntity extends TameableEntity implements Angerable {
     }
 
     public DyeColor getAbdomenColor() { return DyeColor.byId(this.dataTracker.get(ABDOMEN_COLOR)); }
-
     public void setAbdomenColor(DyeColor color){ this.dataTracker.set(ABDOMEN_COLOR, color.getId()); }
 
     @Override
@@ -253,22 +246,13 @@ public class AntEntity extends TameableEntity implements Angerable {
     @Override
     public float getSoundPitch() { return super.getSoundPitch() + 0.5F; }
 
-    @Override
-    public void tick() {
-        super.tick();
-        if (!this.world.isClient) {
-            System.out.println(this.getAttributeValue(EntityAttributes.GENERIC_MAX_HEALTH));
-        }
-    }
-
     private class AttackGoal extends MeleeAttackGoal {
 
         public AttackGoal(double speed, boolean pauseWhenIdle) { super(AntEntity.this, speed, pauseWhenIdle); }
 
         @Override
         protected void attack(LivingEntity target, double squaredDistance) {
-            double d = this.getSquaredMaxAttackDistance(target);
-            if (squaredDistance <= d && this.isCooledDown()) {
+            if (squaredDistance <= this.getSquaredMaxAttackDistance(target) && this.isCooledDown()) {
                 this.resetCooldown();
                 this.mob.tryAttack(target);
                 AntEntity.this.playSound(ArthropodaSoundEvents.ENTITY_ANT_ATTACK, 1.0F, 1.0F);
@@ -298,38 +282,13 @@ public class AntEntity extends TameableEntity implements Angerable {
         return state.isOf(Blocks.GRASS_BLOCK) && world.getBaseLightLevel(pos, 0) > 8;
     }
 
-    private class GoBackHomeDuringNight extends Goal {
-        private final AntEntity ant;
-
-        public GoBackHomeDuringNight(AntEntity ant) {
-            this.ant = ant;
-        }
-
-        @Override
-        public boolean canStart() {
-            return this.ant.getAnthillPos() != null && this.ant.world.isNight();
-        }
-
-        @Override
-        public boolean shouldContinue() {
-            return this.ant.getAnthillPos() != null;
-        }
-
-        @Override
-        public void tick() {
-            BlockPos anthill = this.ant.getAnthillPos();
-            if (anthill != null) {
-                this.ant.getNavigation().startMovingTo(anthill.getX(), anthill.getY(), anthill.getZ(), 1.0D);
-            }
-        }
-    }
-
-    private class FindAnthillGoal extends Goal {
+    private static class FindAnthillGoal extends Goal {
         private final AntEntity ant;
         private int findingTicks;
         private BlockPos anthillPos;
 
         public FindAnthillGoal(AntEntity ant) {
+            this.setControls(EnumSet.of(Goal.Control.MOVE));
             this.ant = ant;
         }
 
@@ -340,23 +299,17 @@ public class AntEntity extends TameableEntity implements Angerable {
         }
 
         @Override
-        public boolean shouldContinue() {
-            return this.anthillPos != null;
-        }
+        public boolean shouldContinue() { return this.anthillPos != null; }
 
         @Override
-        public void start() {
-            this.findingTicks = 1200;
-        }
+        public void start() { this.findingTicks = 1200; }
 
         @Override
         public void tick() {
             if (this.findingTicks > 0) {
                 this.findingTicks--;
                 this.ant.getNavigation().startMovingTo(this.anthillPos.getX(), this.anthillPos.getY(), this.anthillPos.getZ(), 1.0F);
-                if (this.ant.getBlockPos().isWithinDistance(this.anthillPos, 2.0D)) {
-                    this.ant.setAnthillPos(this.anthillPos);
-                }
+                if (this.ant.getBlockPos().isWithinDistance(this.anthillPos, 5.0D)) this.ant.setAnthillPos(this.anthillPos);
             }
         }
 
@@ -366,9 +319,7 @@ public class AntEntity extends TameableEntity implements Angerable {
             for (int x = -radius; x <= radius; x++) {
                 for (int z = -radius; z <= radius; z++) {
                     BlockPos pos = new BlockPos(this.ant.getBlockPos().getX() + x, this.ant.getBlockPos().getY(), this.ant.getBlockPos().getZ() + z);
-                    if (this.ant.world.getBlockState(pos).isOf(ArthropodaBlocks.ANTHILL)) {
-                        list.add(pos);
-                    }
+                    if (this.ant.world.getBlockState(pos).isOf(ArthropodaBlocks.ANTHILL)) list.add(pos);
                 }
             }
             if (list.isEmpty()) return null;
