@@ -43,6 +43,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtHelper;
+import net.minecraft.particle.ItemStackParticleEffect;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.BlockSoundGroup;
@@ -54,6 +56,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.TimeHelper;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.intprovider.UniformIntProvider;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.ServerWorldAccess;
@@ -79,7 +82,6 @@ public class AntEntity extends TameableEntity implements Angerable {
         this.setPathfindingPenalty(PathNodeType.WATER, 1);
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Override
     public EntityData initialize(ServerWorldAccess world, LocalDifficulty difficulty, SpawnReason spawnReason, @Nullable EntityData entityData, @Nullable NbtCompound entityNbt) {
         this.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH).setBaseValue(MathHelper.nextInt(random, 1, 4));
@@ -156,14 +158,32 @@ public class AntEntity extends TameableEntity implements Angerable {
         ItemStack itemStack = player.getStackInHand(hand);
         Item item = itemStack.getItem();
         if (this.world.isClient) {
+            if (this.isHealingItem(itemStack) && this.getHealth() < this.getMaxHealth()) {
+                Vec3d vec3d = this.getBoundingBox().getCenter();
+                Random random = this.world.getRandom();
+                for (int i = 0; i < 10; ++i) {
+                    double velX = random.nextGaussian() * 0.075D;
+                    double velY = random.nextGaussian() * 0.075D;
+                    double velZ = random.nextGaussian() * 0.075D;
+                    this.world.addParticle(new ItemStackParticleEffect(ParticleTypes.ITEM, itemStack), vec3d.x, vec3d.y, vec3d.z, velX, velY, velZ);
+                }
+            }
             boolean bl = this.isOwner(player) || this.isTamed() || item == Items.SUGAR && !this.isTamed();
             return bl ? ActionResult.CONSUME : ActionResult.PASS;
+
         } else {
             if (this.isTamed()) {
                 ActionResult actionResult = super.interactMob(player, hand);
 
-                if (!(item instanceof DyeItem)) {
-                    if ((!actionResult.isAccepted() || this.isBaby()) && this.isOwner(player)) {
+                if (this.isHealingItem(itemStack) && this.getHealth() < this.getMaxHealth()) {
+                    if (!this.isSilent()) this.world.playSoundFromEntity(null, this, ArthropodaSoundEvents.ENTITY_ANT_EAT, this.getSoundCategory(), 1.0F, 1.5F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);
+                    if (!player.getAbilities().creativeMode) itemStack.decrement(1);
+                    this.heal((float)item.getFoodComponent().getHunger());
+                    return ActionResult.SUCCESS;
+                }
+
+                if (!(item instanceof DyeItem) && !this.isHealingItem(itemStack)) {
+                    if (!actionResult.isAccepted() && this.isOwner(player)) {
                         this.setSitting(!this.isSitting());
                         this.jumping = false;
                         this.navigation.stop();
@@ -173,7 +193,6 @@ public class AntEntity extends TameableEntity implements Angerable {
                     return actionResult;
                 }
 
-
                 DyeColor dyeColor = ((DyeItem)item).getColor();
                 if (dyeColor != this.getAbdomenColor()) {
                     this.setAbdomenColor(dyeColor);
@@ -181,6 +200,7 @@ public class AntEntity extends TameableEntity implements Angerable {
 
                     return ActionResult.SUCCESS;
                 }
+
 
                 return actionResult;
 
@@ -204,6 +224,8 @@ public class AntEntity extends TameableEntity implements Angerable {
 
     public DyeColor getAbdomenColor() { return DyeColor.byId(this.dataTracker.get(ABDOMEN_COLOR)); }
     public void setAbdomenColor(DyeColor color){ this.dataTracker.set(ABDOMEN_COLOR, color.getId()); }
+
+    public boolean isHealingItem (ItemStack stack){ return stack.getItem().isFood(); }
 
     @Override
     public boolean handleFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) { return false; }
