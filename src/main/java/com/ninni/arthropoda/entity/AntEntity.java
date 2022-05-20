@@ -10,7 +10,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
 import net.minecraft.entity.ai.goal.AttackWithOwnerGoal;
-import net.minecraft.entity.ai.goal.EscapeDangerGoal;
 import net.minecraft.entity.ai.goal.FollowOwnerGoal;
 import net.minecraft.entity.ai.goal.LookAroundGoal;
 import net.minecraft.entity.ai.goal.LookAtEntityGoal;
@@ -45,7 +44,6 @@ import net.minecraft.recipe.Ingredient;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
@@ -133,8 +131,6 @@ public class AntEntity extends TameableEntity implements Angerable {
         this.setAbdomenColor(DyeColor.byId(nbt.getInt("AbdomenColor")));
     }
 
-
-    @SuppressWarnings("ConstantConditions")
     @Override
     public ActionResult interactMob(PlayerEntity player, Hand hand) {
         ItemStack itemStack = player.getStackInHand(hand);
@@ -144,26 +140,20 @@ public class AntEntity extends TameableEntity implements Angerable {
             return bl ? ActionResult.CONSUME : ActionResult.PASS;
         } else {
             if (this.isTamed()) {
-                if (this.isHealingItem(itemStack) && this.getHealth() < this.getMaxHealth() ) {
-                    if (!this.isSilent()) { this.world.playSoundFromEntity(null, this, SoundEvents.ENTITY_GENERIC_EAT, this.getSoundCategory(), 1.0F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F);}
-                    if (!player.getAbilities().creativeMode) { itemStack.decrement(1); }
-
-                    this.heal((float)item.getFoodComponent().getHunger());
-                    return ActionResult.SUCCESS;
-                }
                 ActionResult actionResult = super.interactMob(player, hand);
 
                 if (!(item instanceof DyeItem)) {
                     if ((!actionResult.isAccepted() || this.isBaby()) && this.isOwner(player)) {
                         this.setSitting(!this.isSitting());
+                        this.setSitting(true);
                         this.jumping = false;
                         this.navigation.stop();
                         this.setTarget(null);
                         return ActionResult.SUCCESS;
                     }
-
                     return actionResult;
                 }
+
 
                 DyeColor dyeColor = ((DyeItem)item).getColor();
                 if (dyeColor != this.getAbdomenColor()) {
@@ -174,7 +164,6 @@ public class AntEntity extends TameableEntity implements Angerable {
                 }
 
                 return actionResult;
-
 
             } else if (item == Items.SUGAR) {
                 if (!this.isSilent()) { this.world.playSoundFromEntity(null, this, ArthropodaSoundEvents.ENTITY_ANT_EAT, this.getSoundCategory(), 1.0F, 1.5F + (this.random.nextFloat() - this.random.nextFloat()) * 0.2F); }
@@ -197,11 +186,6 @@ public class AntEntity extends TameableEntity implements Angerable {
     public DyeColor getAbdomenColor() { return DyeColor.byId(this.dataTracker.get(ABDOMEN_COLOR)); }
 
     public void setAbdomenColor(DyeColor color){ this.dataTracker.set(ABDOMEN_COLOR, color.getId()); }
-
-    public boolean isHealingItem (ItemStack stack){
-        Item item = stack.getItem();
-        return item.isFood() && !Objects.requireNonNull(item.getFoodComponent()).isMeat();
-    }
 
     @Override
     public boolean handleFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) { return false; }
